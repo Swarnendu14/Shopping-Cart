@@ -1,11 +1,14 @@
 const express = require('express');
 const bodyParser = require('body-parser');
 const mongoose= require('mongoose');
+const multer= require('multer');
 require('dotenv').config()
 const {PORT,mongoURL} = process.env;
 const route=require('./routes/route');
 
 const app= express();
+
+app.use(multer().any());
 
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
@@ -13,7 +16,7 @@ app.use(bodyParser.urlencoded({ extended: true }));
 mongoose.connect(mongoURL,{useNewUrlParser:true})
 .then(()=>console.log("MongoDB is connected"))
 .catch((err)=>console.log(err.message))
- 
+
 app.use("/",route);
 
 let port =PORT||3000;

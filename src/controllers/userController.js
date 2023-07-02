@@ -1,5 +1,6 @@
 const validator = require('validator');
-const userModel = require('../models/userModel');
+const userModel= require('../models/userModel');
+const awsFile= require('./aws');
 const bcrypt = require('bcrypt');
 require('dotenv').config()
 const {secretMsg}=process.env;
@@ -26,17 +27,20 @@ const regUser = async (req, res) => {
         if (!uphone) {
             return res.status(400).json({ status: false, message: 'phone number is already registered.' });
         }
-        if (phone.length != 10 && /^[6-9]{1}[0-9]{9}$/.test(phone)) {
+        if (phone.length != 10 && !(/^[6-9]{1}[0-9]{9}$/.test(phone))) {
             return res.status(400).json({ status: false, message: 'Please give valid phone number.' })
         }
 
         if (!(address.shipping) || !(address.billing) || !(address.billing.street) || !(address.billing.city) || !(address.billing.pincode) || !(address.shipping.street) || !(address.shipping.city) || !(address.shipping.pincode)) {
             return res.status(400).json({ status: false, message: 'Please enter all required fields.' });
         }
-        if ((/^[1-9][0-9]{5}$/.test(address.billing.pincode)) && (/^[1-9][0-9]{5}$/.test(address.shipping.pincode))) {
+        if (!(/^[1-9][0-9]{5}$/.test(address.billing.pincode)) && !(/^[1-9][0-9]{5}$/.test(address.shipping.pincode))) {
             return res.status(400).json({ status: false, message: "Enter valid pincode" });
         }
-
+    
+        let uploadUrl = await awsFile.uploadFile(profileImage)
+        profileImage = uploadUrl
+        
         let hashPassword = await bcrypt.hash(password, password.length)
         password = hashPassword;
 
@@ -128,7 +132,7 @@ const updateUser = async (req, res) => {
             if (!uphone) {
                 return res.status(400).json({ status: false, message: 'phone number is already registered.' });
             }
-            if (data.phone.length != 10 && /^[6-9]{1}[0-9]{9}$/.test(data.phone)) {
+            if (data.phone.length != 10 && !(/^[6-9]{1}[0-9]{9}$/.test(data.phone))) {
                 return res.status(400).json({ status: false, message: 'Please give valid phone number.' })
             }
             userData.phone = data.phone;
@@ -154,7 +158,7 @@ const updateUser = async (req, res) => {
                 
                 if (pincode)
                 { 
-                    if (/^[1-9][0-9]{5}$/.test(pincode)||typeof pincode !== 'number') {
+                    if (!(/^[1-9][0-9]{5}$/.test(pincode))||typeof pincode !== 'number') {
                         return res.status(400).json({ status: false, message: "Enter valid pincode" });
                     }
                     userData.address.shipping.pincode = pincode;
@@ -169,12 +173,12 @@ const updateUser = async (req, res) => {
                 if (city){
                     userData.address.billing.city = city;
                 }
-                if (/^[1-9][0-9]{5}$/.test(pincode)||typeof pincode !== 'number') {
+                if (!(/^[1-9][0-9]{5}$/.test(pincode))||typeof pincode !== 'number') {
                     return res.status(400).json({ status: false, message: "Enter valid pincode" });
                 }
                 if (pincode)
                 { 
-                    if (/^[1-9][0-9]{5}$/.test(pincode)||typeof pincode !== 'number') {
+                    if (!(/^[1-9][0-9]{5}$/.test(pincode))||typeof pincode !== 'number') {
                         return res.status(400).json({ status: false, message: "Enter valid pincode" });
                     }
                     userData.address.billing.pincode = pincode;
