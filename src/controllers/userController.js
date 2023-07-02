@@ -1,14 +1,32 @@
 const validator = require('validator');
 const userModel= require('../models/userModel');
+const jwt = require('jsonwebtoken');
 const awsFile= require('./aws');
 const bcrypt = require('bcrypt');
 require('dotenv').config()
 const {secretMsg}=process.env;
+let profileImage;
 
+const uploadFile= async (req,res)=>{
+    try{
+        let files = req.files
+        if (files && files.length > 0) {
+            let uploadUrl = await uploadFile(files[0])
+            profileImage = uploadUrl
+        }
+        else {
+            return res.status(400).send({ status: false, message: "Please Provide Image File" })
+        }
+        return res.status(200).send({ status:true,modules:" profileImage is stored in aws"});
+    }
+    catch(err){
+        return res.status(500).send({status:false,message:err.message});
+    }
+}
 const regUser = async (req, res) => {
     try {
-        let { fname, lname, email, profileImage, password, phone, address } = req.files;
-        if (!fname || !lname || !email || !profileImage || !password || !phone || !address) {
+        let { fname, lname, email, password, phone, address } = req.body;
+        if (!fname || !lname || !email || !password || !phone || !address) {
             return res.status(400).json({ status: false, message: 'Please enter all required fields.' });
         }
         let uemail = await userModel.findOne({ email: email });
@@ -19,12 +37,12 @@ const regUser = async (req, res) => {
             return res.status(400).json({ status: false, message: 'Please enter a valid email address.' });
         }
 
-        if (!(password.length <= 8 && password.length >= 15)) {
+        if (!(password.length >= 8 && password.length <= 15)) {
             return res.status(400).json({ status: false, message: 'Please enter a valid password.' });
         }
 
         let uphone = await userModel.findOne({ phone: phone });
-        if (!uphone) {
+        if (uphone) {
             return res.status(400).json({ status: false, message: 'phone number is already registered.' });
         }
         if (phone.length != 10 && !(/^[6-9]{1}[0-9]{9}$/.test(phone))) {
@@ -38,8 +56,6 @@ const regUser = async (req, res) => {
             return res.status(400).json({ status: false, message: "Enter valid pincode" });
         }
     
-        let uploadUrl = await awsFile.uploadFile(profileImage)
-        profileImage = uploadUrl
         
         let hashPassword = await bcrypt.hash(password, password.length)
         password = hashPassword;
@@ -65,7 +81,7 @@ const login = async (req, res) => {
         }
         
 
-        if (!(password.length <= 8 && password.length >= 15)) {
+        if (!(password.length >= 8 && password.length <= 15)) {
             return res.status(400).json({ status: false, message: 'Please enter a valid password.' });
         }
 
@@ -138,7 +154,7 @@ const updateUser = async (req, res) => {
             userData.phone = data.phone;
         }
         if (data.password) {
-            if (!(password.length <= 8 && password.length >= 15)) {
+            if (!(password.length >= 8 && password.length <= 15)) {
                 return res.status(400).json({ status: false, message: 'Please enter a valid password.' });
             }
             let hashPassword = await bcrypt.hash(data.password, data.password.length)
@@ -197,4 +213,4 @@ const updateUser = async (req, res) => {
         return res.status(500).send({ status: false, message: err.message });
     }
 }
-module.exports = { regUser, login, getUserbyId,updateUser}
+module.exports = {uploadFile, regUser, login, getUserbyId,updateUser}
