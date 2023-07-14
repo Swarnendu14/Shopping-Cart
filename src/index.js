@@ -14,7 +14,7 @@ app.use(express.urlencoded({ extended: true }));
 app.use(multer().any())
 
 mongoose.connect(MONGOOSE_STRING, { usenewurlparser: true })
-    .then(() => console.log('connected to mongoose'))
+    .then(() => console.log('connected to mongooDB'))
     .catch((err) => console.log(err.message));
 
 app.use('/', route);
